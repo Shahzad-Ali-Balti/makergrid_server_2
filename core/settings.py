@@ -1,3 +1,4 @@
+
 from pathlib import Path
 import os
 from dotenv import load_dotenv
@@ -7,11 +8,13 @@ from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Main app uses this for generating URLs to media files
+#MEDIA_URL = '/media/'
+#MEDIA_ROOT = BASE_DIR / 'media'
+#BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
-
-
-
+MEDIA_ROOT = BASE_DIR / "media"
 
 
 # Quick-start development settings - unsuitable for production
@@ -23,12 +26,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-FRONTEND_DOMAIN = os.getenv('FRONTEND_DOMAIN') or "http://localhost:5173" or "https://www.makergrid.ai"
+FRONTEND_DOMAIN = os.getenv('FRONTEND_DOMAIN') or "http://localhost:5173" or "https://www.makergrid.ai" or "https://makergrid-frontend.vercel.app/"
 NGROK_DOMAIN = os.getenv("NGROK_DOMAIN") or "03b6-203-175-73-87.ngrok-free.app"
 # ALLOWED_HOSTS = [] 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1",NGROK_DOMAIN,"http://makergrids.eba-muuyvbmf.eu-north-1.elasticbeanstalk.com/"]
 # settings.py
-ALLOWED_HOSTS = ['*', 'ec2-51-20-127-221.eu-north-1.compute.amazonaws.com']
+ALLOWED_HOSTS = ['ec2-51-21-193-18.eu-north-1.compute.amazonaws.com', 'makergrid.ai','ec2-51-21-193-18.eu-north-1.compute.amazonaws.com','51.21.193.18']
 
 
 # Application definition
@@ -195,7 +198,8 @@ SIMPLE_JWT = {
 #         },
 #     },
 # }
-STATIC_ROOT = "/static/"
+#STATIC_ROOT = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, 'static/')
 STATIC_URL = "/static/"
 
 
@@ -232,9 +236,9 @@ CELERY_TASK_SERIALIZER = 'json'
 AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')  # Your AWS access key ID
 AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')  # Your AWS secret access key
 AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')  # Your S3 bucket name
-AWS_S3_REGION_NAME = 'us-east-1'  # Your S3 region (e.g., us-east-1)
+AWS_S3_REGION_NAME = 'eu-north-1'  # Your S3 region (e.g., us-east-1)
 AWS_S3_SIGNATURE_VERSION = 's3v4'
 AWS_DEFAULT_ACL = None  # To ensure files are uploaded as private
 
 
-aws_lambda_s3_key=os.getenv('aws_lambda_s3_api_key')
+AWS_LAMBDA_S3_KEY=os.getenv('aws_lambda_s3_api_key')

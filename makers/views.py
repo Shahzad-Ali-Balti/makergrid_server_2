@@ -12,10 +12,11 @@ from .serializers import AssetSerializer
 from core.authentication.authentication import JWTAuthentication
 from .pagination import CustomPageNumberPagination
 
-from services.uploadS3 import upload_model_to_s3,upload_image_to_s3
+from makers.services.uploadS3 import upload_model_to_s3,upload_image_to_s3
 import replicate
 from openai import OpenAI
-
+import traceback
+import httpx
 load_dotenv(override=True)
 
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN")
@@ -32,7 +33,6 @@ def normalize_text(text):
 class TextTo3DModelView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [permissions.IsAuthenticated]
-
     def post(self, request):
         user_prompt = request.data.get("prompt")
         style = request.data.get("style")
@@ -89,8 +89,8 @@ class TextTo3DModelView(APIView):
                 "save_gaussian_ply": True,
                 "ss_sampling_steps": 38,
             }
-
-            output = replicate.run(TRELLIS_KEY, input=replicate_input)
+            timeout=httpx.Timeout(300)
+            output = replicate.run(TRELLIS_KEY, input=replicate_input,timeout=timeout)
             model_file = output.get("model_file") and output["model_file"].url
             color_video = output.get("color_video") and output["color_video"].url
             gaussian_ply = output.get("gaussian_ply") and output["gaussian_ply"].url
@@ -130,6 +130,8 @@ class TextTo3DModelView(APIView):
             return response
 
         except Exception as e:
+            print("🔥 Exception in TextTo3DModelView:")
+            print(traceback.format_exc()) 
             return Response({"error": str(e)}, status=500)
 
 
@@ -146,9 +148,10 @@ class ImageTo3DModelView(APIView):
             
             filename = f"temp_{uuid.uuid4()}.png"
             bucket_name = "makergrid-media"
-
-            image_url = upload_image_to_s3(uploaded_file,filename,bucket_name)
-
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY
+            region_name=settings.AWS_S3_REGION_NAME
+            image_url = upload_image_to_s3(uploaded_file,filename,bucket_name,aws_access_key_id,aws_secret_access_key,region_name)
             print(f"image_url for public :{image_url}")
 
             replicate_input = {
@@ -159,8 +162,8 @@ class ImageTo3DModelView(APIView):
                 "save_gaussian_ply": True,
                 "ss_sampling_steps": 38,
             }
-
-            output = replicate.run(TRELLIS_KEY, input=replicate_input)
+            timeout = httpx.Timeout(300)
+            output = replicate.run(TRELLIS_KEY, input=replicate_input,timeout=timeout)
             if not output:
                 return Response({"error": "Replicate output was None. Check API key, image URL, or payload format."}, status=500)
             model_file = output.get("model_file") and output["model_file"].url
@@ -174,7 +177,6 @@ class ImageTo3DModelView(APIView):
             bucket_name = "makergrid-media"
 
             s3_url = upload_model_to_s3(model_file,glb_filename,bucket_name)
-
             asset = Asset.objects.create(
                 user=request.user,
                 model_file=s3_url,
@@ -199,6 +201,8 @@ class ImageTo3DModelView(APIView):
 
 
         except Exception as e:
+            print("🔥 Exception in TextTo3DModelView:")
+            print(traceback.format_exc()) 
             return Response({"error": str(e)}, status=500)
 
 class AssetListCreateView(generics.ListCreateAPIView):
