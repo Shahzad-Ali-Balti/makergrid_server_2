@@ -31,7 +31,7 @@ NGROK_DOMAIN = os.getenv("NGROK_DOMAIN") or "03b6-203-175-73-87.ngrok-free.app"
 # ALLOWED_HOSTS = [] 
 # ALLOWED_HOSTS = ["localhost", "127.0.0.1",NGROK_DOMAIN,"http://makergrids.eba-muuyvbmf.eu-north-1.elasticbeanstalk.com/"]
 # settings.py
-ALLOWED_HOSTS = ['ec2-51-21-193-18.eu-north-1.compute.amazonaws.com', 'makergrid.ai','ec2-51-21-193-18.eu-north-1.compute.amazonaws.com','51.21.193.18','ec2-16-171-8-205.eu-north-1.compute.amazonaws.com']
+ALLOWED_HOSTS = ['ec2-51-21-193-18.eu-north-1.compute.amazonaws.com', 'makergrid.ai','ec2-51-21-193-18.eu-north-1.compute.amazonaws.com','51.21.193.18','ec2-16-171-8-205.eu-north-1.compute.amazonaws.com','16.171.8.205']
 
 
 # Application definition
