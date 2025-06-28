@@ -157,8 +157,49 @@ class ImageTo3DModelView(APIView):
             region_name=settings.AWS_S3_REGION_NAME
             image_url = upload_image_to_s3(uploaded_file,filename,bucket_name,aws_access_key_id,aws_secret_access_key,region_name)
 
-            task = generate_model_task.delay(image_url, request.user.id)
-            return Response({"task_id": task.id}, status=202)
+            # task = generate_model_task.delay(image_url, request.user.id)
+            # return Response({"task_id": task.id}, status=202)
+            replicate_input = {
+                "images": [image_url],
+                "texture_size": 2048,
+                "mesh_simplify": 0.9,
+                "generate_model": True,
+                "save_gaussian_ply": True,
+                "ss_sampling_steps": 38,
+            }
+
+            timeout = httpx.Timeout(300)
+            output = replicate.run(TRELLIS_KEY, input=replicate_input, timeout=timeout)
+
+            model_file = output.get("model_file") and output["model_file"].url
+            color_video = output.get("color_video") and output["color_video"].url
+            gaussian_ply = output.get("gaussian_ply") and output["gaussian_ply"].url
+
+            if not model_file:
+                raise ValueError("model_file not found in output")
+
+            # Upload model to S3
+            glb_filename = f"{uuid.uuid4()}.glb"
+            bucket_name = "makergrid-media"
+            s3_url = upload_model_to_s3(model_file, glb_filename, bucket_name)
+
+            # Create Asset
+            asset = Asset.objects.create(
+                user=request.user,
+                model_file=s3_url,
+                preview_image_url=image_url,
+            )
+            print(f'model is generated and stored : {s3_url}')
+            return {
+                "status": "completed",
+                "asset_id": asset.id,
+                "stored_path": s3_url,
+                "model_file": model_file,
+                "color_video": color_video,
+                "gaussian_ply": gaussian_ply,
+                "preview_image_url": image_url,
+                "created_at": str(asset.created_at),
+            }
 
 
         except Exception as e:
@@ -166,18 +207,18 @@ class ImageTo3DModelView(APIView):
             print(traceback.format_exc())
             return Response({"error": str(e)}, status=500)
 
-class ModelJobStatusView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+# class ModelJobStatusView(APIView):
+#     authentication_classes = [JWTAuthentication]
+#     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request, task_id):
-        result = AsyncResult(task_id)
-        print(f'model status asked')
-        if result.ready():
-            print('model is not ready')
-            return Response({"status": result.status, "result": result.result})
-        print('model is ready')
-        return Response({"status": result.status})
+#     def get(self, request, task_id):
+#         result = AsyncResult(task_id)
+#         print(f'model status asked')
+#         if result.ready():
+#             print('model is not ready')
+#             return Response({"status": result.status, "result": result.result})
+#         print('model is ready')
+#         return Response({"status": result.status})
 
 class ImageTo3DModelView1(APIView):
     authentication_classes = [JWTAuthentication]
